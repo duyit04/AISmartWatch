@@ -1,10 +1,69 @@
-import type { Ai } from '@cloudflare/workers-types';
-
 interface Env {
-  AI: Ai;
+  CF_ACCOUNT_ID?: string;
+  CF_API_TOKEN?: string;
+  AI?: unknown;
   GEMINI_API_KEY?: string;
   TRACKING_WEBHOOK_URL?: string;
   WEBHOOK_URL?: string;
+}
+
+async function callCloudflareAI(
+  env: Env,
+  userMessage: string,
+): Promise<string | null> {
+  const model = '@cf/meta/llama-3.1-8b-instruct';
+
+  // Prefer binding (Workers) — fallback to REST API (Pages)
+  if (env.AI) {
+    try {
+      const response = (await env.AI.run(model, {
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
+        ],
+        max_tokens: 250,
+        temperature: 0.7,
+        top_p: 0.9,
+      })) as { response?: string };
+      return response.response?.trim() || null;
+    } catch (err) {
+      console.error('AI binding error:', err);
+    }
+  }
+
+  if (env.CF_ACCOUNT_ID && env.CF_API_TOKEN) {
+    try {
+      const url = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/ai/run/${model}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.CF_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userMessage },
+          ],
+          max_tokens: 250,
+          temperature: 0.7,
+          top_p: 0.9,
+        }),
+      });
+      if (!response.ok) {
+        console.error('Cloudflare AI REST error:', response.status, await response.text());
+        return null;
+      }
+      const data = (await response.json()) as { result?: { response?: string } };
+      return data.result?.response?.trim() || null;
+    } catch (err) {
+      console.error('Cloudflare AI REST failed:', err);
+      return null;
+    }
+  }
+
+  console.warn('No AI binding or CF_API_TOKEN configured; using fallback.');
+  return null;
 }
 
 const SYSTEM_PROMPT = `You are the AI Watch Assistant — a friendly, knowledgeable sales advisor for the AI Watch Pro smartwatch.
@@ -35,25 +94,6 @@ STYLE:
 - Maximum 3 short sentences per reply
 - Use 1-2 emojis max per message
 - If asked something you don't know, suggest they pre-order or contact support@aiwatch.com`;
-
-async function callCloudflareAI(ai: Ai, userMessage: string): Promise<string | null> {
-  try {
-    const response = (await ai.run('@cf/meta/llama-3.1-8b-instruct', {
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userMessage },
-      ],
-      max_tokens: 250,
-      temperature: 0.7,
-      top_p: 0.9,
-    })) as { response?: string };
-
-    return response.response?.trim() || null;
-  } catch (err) {
-    console.error('Cloudflare AI error:', err);
-    return null;
-  }
-}
 
 function pickReplyFallback(message: string): string {
   const lower = message.toLowerCase();
@@ -176,11 +216,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     let reply: string | null = null;
     let source: 'ai' | 'fallback' = 'fallback';
 
-    if (context.env.AI) {
-      reply = await callCloudflareAI(context.env.AI, message);
-      if (reply) {
-        source = 'ai';
-      }
+    reply = await callCloudflareAI(context.env, message);
+    if (reply) {
+      source = 'ai';
     }
 
     if (!reply) {
