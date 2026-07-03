@@ -4,6 +4,12 @@ interface Env {
 
 const SYSTEM_PROMPT = `You are the AI Watch Assistant — a friendly, knowledgeable sales advisor for the AI Watch Pro smartwatch.
 
+CRITICAL LANGUAGE RULE:
+- ALWAYS detect the language the user writes in and reply in EXACTLY that same language.
+- If the user writes in Vietnamese (or mixes Vietnamese with English), you MUST reply in Vietnamese.
+- Vietnamese accented characters (ă, â, ê, ô, ơ, ư, đ, à, á, ả, ã, ạ, ằ, ắ, ẳ, ẵ, ặ, ầ, ấ, ẩ, ẫ, ậ, è, é, ẻ, ẽ, ẹ, ề, ế, ể, ễ, ệ, ì, í, ỉ, ĩ, ị, ò, ó, ỏ, õ, ọ, ồ, ố, ổ, ỗ, ộ, ờ, ớ, ở, ỡ, ợ, ù, ú, ủ, ũ, ụ, ừ, ứ, ử, ữ, ự, ỳ, ý, ỷ, ỹ, ỵ) MUST appear naturally in your response.
+- Do NOT switch to English even if the user's question contains product names or technical English words — keep the answer in Vietnamese unless the user clearly writes in English.
+
 PRODUCT INFO (use only these facts; never invent specs):
 - Two sizes: 41mm ($299) and 45mm ($329)
 - Three colors: Midnight Black, Silver, Gold
@@ -20,8 +26,7 @@ PRODUCT INFO (use only these facts; never invent specs):
 - Return: 30-day money-back guarantee
 
 STYLE:
-- Friendly, concise, helpful
-- Reply in the same language the user uses (English or Vietnamese)
+- Friendly, concise, helpful — sound like a Vietnamese salesperson, not a translator
 - Maximum 3 short sentences per reply
 - Use 1-2 emojis max per message
 - If asked something you don't know, suggest they pre-order or contact support@aiwatch.com`;
@@ -77,31 +82,66 @@ async function callGemini(apiKey: string, userMessage: string): Promise<string |
 
 function pickReplyFallback(message: string): string {
   const lower = message.toLowerCase();
-  if (lower.includes('price') || lower.includes('cost') || lower.includes('giá')) {
+  // Detect Vietnamese explicitly
+  const vnMarkers = /[ăâêôơưđàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]|giá|tính năng|giao hàng|đặt|màu|chào|chống nước|đổi|bảo hành/;
+  const isVietnamese = vnMarkers.test(message);
+
+  if (isVietnamese) {
+    if (/(giá|bao nhiêu|cost|price)/.test(lower)) {
+      return 'AI Watch Pro giá từ $299 (41mm) hoặc $329 (45mm). Đặt trước ngay để được giảm 25% từ giá bán lẻ $399! 🎉';
+    }
+    if (/(tính năng|thông số|spec)/.test(lower)) {
+      return 'AI Watch có: pin 14 ngày, theo dõi sức khỏe AI (nhịp tim, SpO2, ECG, giấc ngủ), chống nước 5 ATM và màn hình AMOLED luôn hiển thị. Bạn quan tâm tính năng nào nhất?';
+    }
+    if (/(giao hàng|ship|shipping)/.test(lower)) {
+      return 'Miễn phí giao hàng toàn quốc! Dự kiến giao vào tháng 8/2026. Khách đặt trước được ưu tiên giao sớm nhất. 📦';
+    }
+    if (/(đặt|đặt cọc|preorder|pre-order)/.test(lower)) {
+      return 'Tuyệt vời! Bạn có thể đặt trước ngay tại trang này — nhấn nút "Đặt trước ngay". Giảm 25% giá bán lẻ, miễn phí ship và tặng kèm dây đeo cao cấp ($29)!';
+    }
+    if (/(màu|color)/.test(lower)) {
+      return 'Có 3 màu: Midnight Black, Silver và Gold — tất cả đều hoàn thiện titan cao cấp. Bạn thích màu nào? ✨';
+    }
+    if (/(chào|hello|hi|hey)/.test(lower)) {
+      return 'Chào bạn! 👋 Mình có thể hỗ trợ về giá, thông số, đặt trước hoặc mọi thứ liên quan đến AI Watch Pro. Bạn muốn tìm hiểu gì nè?';
+    }
+    if (/(nước|water|chống nước)/.test(lower)) {
+      return 'AI Watch đạt chuẩn 5 ATM — bơi thoải mái đến 50m. Đi bơi, tắm, lặn biển đều ok! 🏊';
+    }
+    if (/(pin|battery)/.test(lower)) {
+      return 'Pin 14 ngày cho mỗi lần sạc với sử dụng thông thường. Bật chế độ always-on thì khoảng 7 ngày. ⚡';
+    }
+    if (/(đổi|bảo hành|warranty|return)/.test(lower)) {
+      return 'Đổi trả 30 ngày không hỏi lý do. Bảo hành mở rộng 2 năm miễn phí. 🛡️';
+    }
+    return 'Cảm ơn bạn đã quan tâm đến AI Watch Pro! Mình có thể hỗ trợ về giá, thông số, màu sắc, đặt trước hoặc giao hàng. Bạn muốn biết gì nè? 😊';
+  }
+
+  if (lower.includes('price') || lower.includes('cost')) {
     return 'AI Watch Pro starts at $299 (41mm) or $329 (45mm). Pre-order now to lock in 25% off the $399 retail price! 🎉';
   }
-  if (lower.includes('feature') || lower.includes('spec') || lower.includes('tính năng')) {
+  if (lower.includes('feature') || lower.includes('spec')) {
     return 'AI Watch features: 14-day battery, AI health monitoring (HR, SpO2, ECG, sleep), 5 ATM water resistance, and always-on AMOLED display. Which spec matters most to you?';
   }
-  if (lower.includes('shipping') || lower.includes('delivery') || lower.includes('giao hàng')) {
+  if (lower.includes('shipping') || lower.includes('delivery')) {
     return 'Free worldwide shipping! Estimated delivery is August 2026. Pre-order customers get priority shipping. 📦';
   }
-  if (lower.includes('preorder') || lower.includes('pre-order') || lower.includes('order') || lower.includes('đặt')) {
+  if (lower.includes('preorder') || lower.includes('pre-order') || lower.includes('order')) {
     return 'Great choice! You can pre-order on this page — click the "Pre-order Now" button. 25% off retail, free shipping, and a free premium band ($29 value) included!';
   }
-  if (lower.includes('color') || lower.includes('màu')) {
+  if (lower.includes('color')) {
     return 'Available colors: Midnight Black, Silver, and Gold — all with premium titanium finish. Pick your favorite! ✨';
   }
-  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey') || lower.includes('chào')) {
+  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
     return 'Hi there! 👋 I can help with pricing, specs, pre-orders, or anything else about AI Watch Pro. What would you like to know?';
   }
-  if (lower.includes('water') || lower.includes('waterproof') || lower.includes('chống nước')) {
+  if (lower.includes('water') || lower.includes('waterproof')) {
     return 'AI Watch is rated 5 ATM — swim-proof up to 50 meters. Perfect for pools, showers, and open water! 🏊';
   }
-  if (lower.includes('battery') || lower.includes('pin')) {
+  if (lower.includes('battery')) {
     return '14 days on a single charge with typical use. Always-on display mode drops it to about 7 days. ⚡';
   }
-  if (lower.includes('return') || lower.includes('warranty') || lower.includes('đổi') || lower.includes('bảo hành')) {
+  if (lower.includes('return') || lower.includes('warranty')) {
     return '30-day money-back guarantee — no questions asked. Plus 2-year extended warranty included free. 🛡️';
   }
   return "Thanks for your interest in AI Watch Pro! I can help with pricing, specs, colors, pre-orders, or shipping. What would you like to know? 😊";
