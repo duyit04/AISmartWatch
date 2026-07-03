@@ -1,0 +1,8 @@
+# Cloudflare Pages local dev secrets
+# File này KHÔNG được commit (đã nằm trong .gitignore: .env*, .wrangler/)
+# Copy thành functions/.dev.vars và điền giá trị thật để dev local
+
+GEMINI_API_KEY=your-gemini-key-here
+WEBHOOK_URL=
+TRACKING_WEBHOOK_URL=
+# CART_KV binding: wrangler tự tạo KV preview, không cần ở đây
