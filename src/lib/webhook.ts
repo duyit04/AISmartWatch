@@ -1,7 +1,8 @@
 // Webhook + backend API helpers
 // Local: http://localhost:3001/api
-// Production: https://your-domain.pages.dev/api
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+// Production: same origin (/api)
+const isDev = import.meta.env.DEV;
+const API_BASE = isDev ? 'http://localhost:3001' : '';
 
 function getSessionId(): string {
   let sessionId = sessionStorage.getItem('aiwatch_session_id');

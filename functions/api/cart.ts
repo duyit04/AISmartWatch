@@ -3,68 +3,43 @@ interface Env {
 }
 
 interface CartItem {
-  model: string;
-  color: string;
-  colorName: string;
-  price: number;
+  id: string;
   quantity: number;
-  addedAt: number;
+  [key: string]: unknown;
 }
 
-interface WishlistItem {
-  model: string;
-  color: string;
-  colorName: string;
-  price: number;
-  addedAt: number;
-}
+const FALLBACK: CartItem[] = [];
 
-function getSessionId(request: Request): string {
-  return request.headers.get('X-Session-Id') || 'anonymous';
-}
-
-async function getJson<T>(env: Env, key: string, fallback: T): Promise<T> {
-  if (!env.CART_KV) return fallback;
+async function getItems(env: Env, key: string): Promise<CartItem[]> {
+  if (!env.CART_KV) return FALLBACK;
+  const data = await env.CART_KV.get(`cart:${key}`);
+  if (!data) return [];
   try {
-    const value = await env.CART_KV.get(key, 'json');
-    return (value as T) ?? fallback;
+    return JSON.parse(data) as CartItem[];
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-async function setJson(env: Env, key: string, value: unknown): Promise<void> {
+async function setItems(env: Env, key: string, items: CartItem[]): Promise<void> {
   if (!env.CART_KV) return;
-  try {
-    await env.CART_KV.put(key, JSON.stringify(value), { expirationTtl: 60 * 60 * 24 * 30 });
-  } catch (err) {
-    console.error(`KV put failed for ${key}:`, err);
-  }
+  await env.CART_KV.put(`cart:${key}`, JSON.stringify(items));
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  try {
-    const body = (await context.request.json()) as { items?: CartItem[] };
-    const sessionId = getSessionId(context.request);
-    const items = Array.isArray(body.items) ? body.items : [];
-
-    await setJson(context.env, `cart:${sessionId}`, items);
-
-    return new Response(JSON.stringify({ success: true, message: 'Cart synced' }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch {
-    return new Response(JSON.stringify({ success: false, message: 'Invalid JSON' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+export const onRequestGet = async ({ request, env }: { request: Request; env: Env }) => {
+  const sessionId = request.headers.get('X-Session-Id') || 'anonymous';
+  const items = await getItems(env, sessionId);
+  return new Response(JSON.stringify({ success: true, items }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const sessionId = getSessionId(context.request);
-  const items = await getJson<CartItem[]>(context.env, `cart:${sessionId}`, []);
-  return new Response(JSON.stringify({ success: true, items }), {
+export const onRequestPost = async ({ request, env }: { request: Request; env: Env }) => {
+  const sessionId = request.headers.get('X-Session-Id') || 'anonymous';
+  const body = (await request.json().catch(() => ({}))) as { items?: CartItem[] };
+  const items = Array.isArray(body.items) ? body.items : [];
+  await setItems(env, sessionId, items);
+  return new Response(JSON.stringify({ success: true, message: 'Cart synced' }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };

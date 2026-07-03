@@ -1,61 +1,45 @@
 interface Env {
+  WISHLIST_KV?: KVNamespace;
   CART_KV?: KVNamespace;
 }
 
 interface WishlistItem {
-  model: string;
-  color: string;
-  colorName: string;
-  price: number;
-  addedAt: number;
+  id: string;
+  [key: string]: unknown;
 }
 
-function getSessionId(request: Request): string {
-  return request.headers.get('X-Session-Id') || 'anonymous';
-}
-
-async function getJson<T>(env: Env, key: string, fallback: T): Promise<T> {
-  if (!env.CART_KV) return fallback;
+async function getItems(env: Env, key: string): Promise<WishlistItem[]> {
+  const kv = env.WISHLIST_KV || env.CART_KV;
+  if (!kv) return [];
+  const data = await kv.get(`wishlist:${key}`);
+  if (!data) return [];
   try {
-    const value = await env.CART_KV.get(key, 'json');
-    return (value as T) ?? fallback;
+    return JSON.parse(data) as WishlistItem[];
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-async function setJson(env: Env, key: string, value: unknown): Promise<void> {
-  if (!env.CART_KV) return;
-  try {
-    await env.CART_KV.put(key, JSON.stringify(value), { expirationTtl: 60 * 60 * 24 * 60 });
-  } catch (err) {
-    console.error(`KV put failed for ${key}:`, err);
-  }
+async function setItems(env: Env, key: string, items: WishlistItem[]): Promise<void> {
+  const kv = env.WISHLIST_KV || env.CART_KV;
+  if (!kv) return;
+  await kv.put(`wishlist:${key}`, JSON.stringify(items));
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  try {
-    const body = (await context.request.json()) as { items?: WishlistItem[] };
-    const sessionId = getSessionId(context.request);
-    const items = Array.isArray(body.items) ? body.items : [];
-
-    await setJson(context.env, `wishlist:${sessionId}`, items);
-
-    return new Response(JSON.stringify({ success: true, message: 'Wishlist synced' }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch {
-    return new Response(JSON.stringify({ success: false, message: 'Invalid JSON' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+export const onRequestGet = async ({ request, env }: { request: Request; env: Env }) => {
+  const sessionId = request.headers.get('X-Session-Id') || 'anonymous';
+  const items = await getItems(env, sessionId);
+  return new Response(JSON.stringify({ success: true, items }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const sessionId = getSessionId(context.request);
-  const items = await getJson<WishlistItem[]>(context.env, `wishlist:${sessionId}`, []);
-  return new Response(JSON.stringify({ success: true, items }), {
+export const onRequestPost = async ({ request, env }: { request: Request; env: Env }) => {
+  const sessionId = request.headers.get('X-Session-Id') || 'anonymous';
+  const body = (await request.json().catch(() => ({}))) as { items?: WishlistItem[] };
+  const items = Array.isArray(body.items) ? body.items : [];
+  await setItems(env, sessionId, items);
+  return new Response(JSON.stringify({ success: true, message: 'Wishlist synced' }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };
