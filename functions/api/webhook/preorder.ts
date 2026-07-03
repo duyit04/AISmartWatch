@@ -82,7 +82,16 @@ export const onRequestPost = async ({ request, env }: PagesContext) => {
     };
 
     const webhookUrl = env.PREORDER_WEBHOOK_URL || env.TRACKING_WEBHOOK_URL;
-    return forwardToExternal(webhookUrl, payload, 'Pre-order received (logs only)');
+
+    if (!webhookUrl) {
+      console.log('[preorder] no webhook configured, logging payload:', JSON.stringify(payload));
+      return new Response(
+        JSON.stringify({ success: true, message: 'Pre-order received (no upstream configured)' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
+    return forwardToExternal(webhookUrl, payload, 'Pre-order forwarded');
   } catch (err) {
     console.error('[preorder] parse error:', err);
     return new Response(
