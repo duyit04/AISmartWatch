@@ -1,29 +1,61 @@
-interface Env {}
+interface Env {
+  CART_KV?: KVNamespace;
+}
 
-async function readBody(request: Request): Promise<{ items?: unknown[]; ok: boolean }> {
+interface ViewedItem {
+  model: string;
+  color: string;
+  colorName: string;
+  price: number;
+  viewedAt: number;
+}
+
+function getSessionId(request: Request): string {
+  return request.headers.get('X-Session-Id') || 'anonymous';
+}
+
+async function getJson<T>(env: Env, key: string, fallback: T): Promise<T> {
+  if (!env.CART_KV) return fallback;
   try {
-    const body = (await request.json()) as { items?: unknown[] };
-    return { items: body.items, ok: true };
+    const value = await env.CART_KV.get(key, 'json');
+    return (value as T) ?? fallback;
   } catch {
-    return { ok: false };
+    return fallback;
+  }
+}
+
+async function setJson(env: Env, key: string, value: unknown): Promise<void> {
+  if (!env.CART_KV) return;
+  try {
+    await env.CART_KV.put(key, JSON.stringify(value), { expirationTtl: 60 * 60 * 24 * 90 });
+  } catch (err) {
+    console.error(`KV put failed for ${key}:`, err);
   }
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const { ok } = await readBody(context.request);
-  if (!ok) {
+  try {
+    const body = (await context.request.json()) as { items?: ViewedItem[] };
+    const sessionId = getSessionId(context.request);
+    const items = Array.isArray(body.items) ? body.items : [];
+
+    await setJson(context.env, `viewed:${sessionId}`, items);
+
+    return new Response(JSON.stringify({ success: true, message: 'Viewed products synced' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch {
     return new Response(JSON.stringify({ success: false, message: 'Invalid JSON' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  return new Response(JSON.stringify({ success: true, message: 'Viewed products synced' }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
 };
 
-export const onRequestGet: PagesFunction<Env> = async () => {
-  return new Response(JSON.stringify({ success: true, items: [] }), {
+export const onRequestGet: PagesFunction<Env> = async (context) => {
+  const sessionId = getSessionId(context.request);
+  const items = await getJson<ViewedItem[]>(context.env, `viewed:${sessionId}`, []);
+  return new Response(JSON.stringify({ success: true, items }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };
