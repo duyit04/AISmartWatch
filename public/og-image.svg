@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A0A0C"/>
+      <stop offset="50%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0A0A0C"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#5AC8FA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <circle cx="900" cy="315" r="280" fill="url(#glow)"/>
+
+  <g transform="translate(900, 315)">
+    <rect x="-180" y="-220" width="360" height="440" rx="100" fill="#1a1a1a" stroke="#3a3a3a" stroke-width="2"/>
+    <rect x="-160" y="-200" width="320" height="400" rx="80" fill="#000"/>
+    <rect x="-150" y="-190" width="300" height="380" rx="70" fill="#0a0a0a"/>
+    <text x="0" y="20" font-family="ui-monospace, monospace" font-size="80" font-weight="700" fill="white" text-anchor="middle">10:30</text>
+    <text x="0" y="80" font-family="ui-sans-serif, system-ui" font-size="22" fill="#5AC8FA" text-anchor="middle">AI Watch</text>
+    <circle cx="-80" cy="120" r="8" fill="#FF3B30"/>
+    <text x="-60" y="125" font-family="ui-sans-serif, system-ui" font-size="14" fill="#A1A1A6">Health</text>
+    <text x="0" y="170" font-family="ui-sans-serif, system-ui" font-size="12" fill="#6E6E73" text-anchor="middle">AI Assistant Active</text>
+  </g>
+
+  <g transform="translate(80, 180)">
+    <text font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="600" fill="#5AC8FA" letter-spacing="2">AI WATCH</text>
+    <text y="80" font-family="ui-sans-serif, system-ui, sans-serif" font-size="78" font-weight="800" fill="white">The Future of</text>
+    <text y="170" font-family="ui-sans-serif, system-ui, sans-serif" font-size="78" font-weight="800" fill="url(#accent)">Time is Here</text>
+    <text y="240" font-family="ui-sans-serif, system-ui, sans-serif" font-size="26" fill="#A1A1A6">14-day battery · AI Health · $299</text>
+    <g transform="translate(0, 290)">
+      <rect width="240" height="56" rx="28" fill="url(#accent)"/>
+      <text x="120" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" font-weight="600" fill="white" text-anchor="middle">Pre-order Now ’</text>
+    </g>
+  </g>
+</svg>

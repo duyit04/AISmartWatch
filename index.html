@@ -18,14 +18,14 @@
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="product" />
-    <meta property="og:url" content="https://aiwatch.com/" />
+    <meta property="og:url" content="https://aismartwatch.pages.dev/" />
     <meta property="og:title" content="AI Watch - The Future of Time is Here" />
     <meta property="og:description" content="AI-powered smartwatch with 14-day battery life, advanced health monitoring, and premium titanium design. Pre-order now starting at $299." />
-    <meta property="og:image" content="https://aiwatch.com/og-image.jpg" />
+    <meta property="og:image" content="https://aismartwatch.pages.dev/og-image.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="AI Watch - Premium AI-Powered Smartwatch" />
@@ -36,16 +36,21 @@
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://aiwatch.com/" />
+    <meta property="twitter:url" content="https://aismartwatch.pages.dev/" />
     <meta property="twitter:title" content="AI Watch - The Future of Time is Here" />
     <meta property="twitter:description" content="AI-powered smartwatch with 14-day battery life, advanced health monitoring, and premium titanium design. Pre-order now starting at $299." />
-    <meta property="twitter:image" content="https://aiwatch.com/twitter-image.jpg" />
+    <meta property="twitter:image" content="https://aismartwatch.pages.dev/og-image.svg" />
     <meta property="twitter:image:alt" content="AI Watch - Premium AI-Powered Smartwatch" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+
+    <!-- Preload critical SVG assets -->
+    <link rel="preload" as="image" href="/favicon.svg" />
     
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -66,7 +71,7 @@
         "priceCurrency": "USD",
         "availability": "https://schema.org/PreOrder",
         "offerCount": "5000",
-        "url": "https://aiwatch.com/",
+        "url": "https://aismartwatch.pages.dev/",
         "priceValidUntil": "2026-08-01"
       },
       "aggregateRating": {
@@ -74,7 +79,7 @@
         "ratingValue": "4.9",
         "reviewCount": "2847"
       },
-      "image": "https://aiwatch.com/og-image.jpg",
+      "image": "https://aismartwatch.pages.dev/og-image.svg",
       "manufacturer": {
         "@type": "Organization",
         "name": "AI Watch Inc."
@@ -89,8 +94,8 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "AI Watch Inc.",
-      "url": "https://aiwatch.com/",
-      "logo": "https://aiwatch.com/logo.svg",
+      "url": "https://aismartwatch.pages.dev/",
+      "logo": "https://aismartwatch.pages.dev/logo.svg",
       "contactPoint": {
         "@type": "ContactPoint",
         "email": "support@aiwatch.com",
