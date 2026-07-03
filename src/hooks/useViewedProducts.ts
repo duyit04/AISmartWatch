@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from './ToastContext';
 import { api } from '../lib/api';
 
 export interface ViewedProduct {
@@ -28,7 +27,6 @@ function mapViewedToApi(items: ViewedProduct[]) {
 export function useViewedProducts() {
   const [viewedProducts, setViewedProducts] = useState<ViewedProduct[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const toast = useToast();
 
   useEffect(() => {
     try {
@@ -55,9 +53,10 @@ export function useViewedProducts() {
     try {
       await api.viewed(mapViewedToApi(currentItems));
     } catch {
-      toast.error('Sync failed', 'Viewed products could not be synced to server.');
+      // Sync is best-effort; localStorage is the source of truth.
+      // Surfacing a toast here would spam users whenever the function is unavailable.
     }
-  }, [toast]);
+  }, []);
 
   const syncViewedDebounced = useCallback((currentItems: ViewedProduct[]) => {
     const timeout = setTimeout(() => syncViewed(currentItems), SYNC_DEBOUNCE_MS);
