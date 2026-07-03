@@ -1,0 +1,16 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://aiwatch.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Block access to unnecessary paths
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /public/
+Disallow: /*.json$
+Disallow: /*.map$
