@@ -34,5 +34,6 @@ export const api = {
   cart: (items: Array<Record<string, unknown>>) => apiPost<{ success: boolean; message: string }>('/api/cart', { items }),
   wishlist: (items: Array<Record<string, unknown>>) => apiPost<{ success: boolean; message: string }>('/api/wishlist', { items }),
   viewed: (items: Array<Record<string, unknown>>) => apiPost<{ success: boolean; message: string }>('/api/viewed', { items }),
-  chat: (message: string) => apiPost<{ success: boolean; reply: string }>('/api/chat', { message }),
+  chat: (message: string) =>
+    apiPost<{ success: boolean; reply: string; source?: 'gemini' | 'fallback' }>('/api/chat', { message }),
 };

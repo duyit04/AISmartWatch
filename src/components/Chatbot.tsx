@@ -8,6 +8,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  source?: 'gemini' | 'fallback';
 }
 
 const quickReplies = [
@@ -64,6 +65,7 @@ export function Chatbot() {
         role: 'assistant',
         content: result.reply,
         timestamp: new Date(),
+        source: result.source,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -165,6 +167,24 @@ export function Chatbot() {
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                {message.role === 'assistant' && message.source && (
+                  <div className="mt-1 flex items-center gap-1">
+                    <span
+                      className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                        message.source === 'gemini'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-amber-500/20 text-amber-400'
+                      }`}
+                      title={
+                        message.source === 'gemini'
+                          ? 'Trả lời bằng AI Gemini (câu trả lời được sinh tự động)'
+                          : 'Trả lời từ câu có sẵn (fallback khi Gemini không khả dụng)'
+                      }
+                    >
+                      {message.source === 'gemini' ? '✨ AI Gemini' : '💬 Câu mẫu'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
