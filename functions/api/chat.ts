@@ -1,5 +1,10 @@
+import type { Ai } from '@cloudflare/workers-types';
+
 interface Env {
+  AI: Ai;
   GEMINI_API_KEY?: string;
+  TRACKING_WEBHOOK_URL?: string;
+  WEBHOOK_URL?: string;
 }
 
 const SYSTEM_PROMPT = `You are the AI Watch Assistant — a friendly, knowledgeable sales advisor for the AI Watch Pro smartwatch.
@@ -31,51 +36,21 @@ STYLE:
 - Use 1-2 emojis max per message
 - If asked something you don't know, suggest they pre-order or contact support@aiwatch.com`;
 
-interface ChatMessage {
-  role: 'user' | 'model';
-  parts: { text: string }[];
-}
-
-async function callGemini(apiKey: string, userMessage: string): Promise<string | null> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-  const body = {
-    system_instruction: {
-      parts: [{ text: SYSTEM_PROMPT }],
-    },
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: userMessage }],
-      },
-    ] satisfies ChatMessage[],
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 250,
-      topP: 0.9,
-    },
-  };
-
+async function callCloudflareAI(ai: Ai, userMessage: string): Promise<string | null> {
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const response = (await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      max_tokens: 250,
+      temperature: 0.7,
+      top_p: 0.9,
+    })) as { response?: string };
 
-    if (!response.ok) {
-      console.error('Gemini API error:', response.status, await response.text());
-      return null;
-    }
-
-    const data = (await response.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text?.trim() || null;
+    return response.response?.trim() || null;
   } catch (err) {
-    console.error('Gemini fetch failed:', err);
+    console.error('Cloudflare AI error:', err);
     return null;
   }
 }
@@ -156,10 +131,9 @@ async function trackConversation(
   sessionId: string,
   userMessage: string,
   reply: string,
-  source: 'gemini' | 'fallback',
+  source: 'ai' | 'fallback',
 ): Promise<void> {
-  if (!env.GEMINI_API_KEY) return;
-  const trackingWebhook = (env as unknown as Record<string, string>).TRACKING_WEBHOOK_URL;
+  const trackingWebhook = env.TRACKING_WEBHOOK_URL || env.WEBHOOK_URL;
   if (!trackingWebhook) return;
 
   try {
@@ -200,12 +174,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     let reply: string | null = null;
-    let source: 'gemini' | 'fallback' = 'fallback';
+    let source: 'ai' | 'fallback' = 'fallback';
 
-    if (context.env.GEMINI_API_KEY) {
-      reply = await callGemini(context.env.GEMINI_API_KEY, message);
+    if (context.env.AI) {
+      reply = await callCloudflareAI(context.env.AI, message);
       if (reply) {
-        source = 'gemini';
+        source = 'ai';
       }
     }
 

@@ -8,7 +8,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  source?: 'gemini' | 'fallback';
+  source?: 'ai' | 'fallback';
 }
 
 const quickReplies = [
@@ -171,17 +171,17 @@ export function Chatbot() {
                   <div className="mt-1 flex items-center gap-1">
                     <span
                       className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded ${
-                        message.source === 'gemini'
+                        message.source === 'ai'
                           ? 'bg-emerald-500/20 text-emerald-400'
                           : 'bg-amber-500/20 text-amber-400'
                       }`}
                       title={
-                        message.source === 'gemini'
-                          ? 'Trả lời bằng AI Gemini (câu trả lời được sinh tự động)'
-                          : 'Trả lời từ câu có sẵn (fallback khi Gemini không khả dụng)'
+                        message.source === 'ai'
+                          ? 'Trả lời bằng AI (Cloudflare Workers AI / Llama)'
+                          : 'Trả lời từ câu có sẵn (fallback khi AI không khả dụng)'
                       }
                     >
-                      {message.source === 'gemini' ? '✨ AI Gemini' : '💬 Câu mẫu'}
+                      {message.source === 'ai' ? '✨ AI' : '💬 Câu mẫu'}
                     </span>
                   </div>
                 )}
