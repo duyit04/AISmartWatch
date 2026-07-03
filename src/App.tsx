@@ -1,5 +1,5 @@
 import './index.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { ProductShowcase } from './components/ProductShowcase';
@@ -10,14 +10,17 @@ import { Countdown } from './components/Countdown';
 import { FAQ } from './components/FAQ';
 import { PreOrderForm } from './components/PreOrderForm';
 import { Footer } from './components/Footer';
-import { CartDrawer } from './components/CartDrawer';
-import { WishlistDrawer } from './components/WishlistDrawer';
-import { ViewedProductsDrawer } from './components/ViewedProductsDrawer';
-import { Chatbot } from './components/Chatbot';
 import { ToastContainer } from './components/ToastContainer';
 import { ToastProvider } from './hooks/ToastContext';
 import { CartProvider } from './hooks/CartContext';
 import { useBehaviorTracking } from './hooks/useBehaviorTracking';
+
+const CartDrawer = lazy(() => import('./components/CartDrawer').then((m) => ({ default: m.CartDrawer })));
+const WishlistDrawer = lazy(() => import('./components/WishlistDrawer').then((m) => ({ default: m.WishlistDrawer })));
+const ViewedProductsDrawer = lazy(() =>
+  import('./components/ViewedProductsDrawer').then((m) => ({ default: m.ViewedProductsDrawer })),
+);
+const Chatbot = lazy(() => import('./components/Chatbot').then((m) => ({ default: m.Chatbot })));
 
 export default function App() {
   return (
@@ -77,25 +80,29 @@ function AppContent() {
       <Footer />
 
       {/* Drawers */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-      />
-      <WishlistDrawer
-        isOpen={isWishlistOpen}
-        onClose={() => setIsWishlistOpen(false)}
-        onOpenCart={() => {
-          setIsWishlistOpen(false);
-          setIsCartOpen(true);
-        }}
-      />
-      <ViewedProductsDrawer
-        isOpen={isViewedOpen}
-        onClose={() => setIsViewedOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <CartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+        />
+        <WishlistDrawer
+          isOpen={isWishlistOpen}
+          onClose={() => setIsWishlistOpen(false)}
+          onOpenCart={() => {
+            setIsWishlistOpen(false);
+            setIsCartOpen(true);
+          }}
+        />
+        <ViewedProductsDrawer
+          isOpen={isViewedOpen}
+          onClose={() => setIsViewedOpen(false)}
+        />
+      </Suspense>
 
       {/* Chatbot */}
-      <Chatbot />
+      <Suspense fallback={null}>
+        <Chatbot />
+      </Suspense>
 
       {/* Toast Notifications */}
       <ToastContainer />
